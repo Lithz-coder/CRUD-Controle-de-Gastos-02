@@ -1,17 +1,19 @@
-# Estagio 1: Build da Aplicacao com Maven
-FROM eclipse-temurin:21-jdk-jammy as builder
+# Etapa de build
+FROM eclipse-temurin:17-jdk-alpine AS build
 WORKDIR /app
-COPY .mvn/ .mvn
-COPY mvnw .
+
 COPY pom.xml .
-#Permissao de execucao
-RUN chmod +x mvnw
-RUN ./mvnw dependency:go-offline
-COPY src ./src
-RUN ./mvnw clean package -DskipTests
-# Estagio 2: Imagem Final de Execucao
-FROM eclipse-temurin:21-jre-jammy
+COPY mvnw .
+COPY .mvn .mvn
+RUN ./mvnw dependency:go-offline -B
+
+COPY src src
+RUN ./mvnw package -DskipTests
+
+# Etapa final
+FROM eclipse-temurin:17-jdk-alpine
 WORKDIR /app
-COPY --from=builder /app/target/*.jar app.jar
+COPY --from=build /app/target/*.jar app.jar
+
 EXPOSE 8080
-ENTRYPOINT ["java", "-jar", "app.jar"]
+ENTRYPOINT ["java","-jar","app.jar"]
